@@ -7,31 +7,124 @@ using System.Web.Http;
 using System.Web.Http.Routing;
 using Learning.Data.Entities;
 using Learning.Data;
-
+using Learning.Web.Models;
 
 namespace Learning.Web.Controllers
 {
-    public class CoursesController : ApiController
+    public class CoursesController : BaseApiController
     {
-        public CoursesController()
-            : base()
+        public CoursesController(ILearningRepository repo)
+            : base(repo)
         {
         }
 
-        public List<Course> Get()
+        public IEnumerable<CourseModel> Get()
         {
-            ILearningRepository repository = new LearningRepository(new LearningContext());
+            IQueryable<Course> query;
+            query = TheRepository.GetAllCourses();
 
-            return repository.GetAllCourses().ToList();
+            var results = query.ToList().Select(s => TheModelFactory.Create(s));
+
+            return results;
         }
 
-        [Route("{id:int}")]
         public HttpResponseMessage GetCourse(int id)
         {
-            ILearningRepository repository = new LearningRepository(new LearningContext());
+            try
+            {
+                var course = TheRepository.GetCourse(id);
+                if (course != null)
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, TheModelFactory.Create(course));
+                }
+                else
+                {
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ex);
+            }
+        }
 
-            return Request.CreateResponse(HttpStatusCode.OK, repository.GetCourse(id));
+        public HttpResponseMessage Post([FromBody] CourseModel courseModel)
+        {
+            try
+            {
+                var entity = TheModelFactory.Parse(courseModel);
 
+                if (entity == null)
+                    Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Could not read subject/tutor from the body!");
+
+                if (TheRepository.Insert(entity) && TheRepository.SaveAll())
+                {
+                    return Request.CreateResponse(HttpStatusCode.Created, TheModelFactory.Create(entity));
+                }
+                else
+                {
+                    return Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Could not save to the datebase!");
+                }
+            }
+            catch(Exception ex)
+            {
+                return Request.CreateErrorResponse(HttpStatusCode.BadRequest, ex);
+            }
+        }
+
+        public HttpResponseMessage Put(int id, [FromBody] CourseModel courseModel)
+        {
+            try
+            {
+                var updatedCourse = TheModelFactory.Parse(courseModel);
+                if (updatedCourse == null)
+                    Request.CreateErrorResponse(HttpStatusCode.BadRequest, "Could not read subject/tutor from body!");
+
+                var originalCourse = TheRepository.GetCourse(id, false);
+
+                if (originalCourse == null || originalCourse.Id != id)
+                {
+                    return Request.CreateResponse(HttpStatusCode.NotModified, "Course is not found!");
+                }
+                else
+                    updatedCourse.Id = id;
+
+                if (TheRepository.Update(originalCourse, updatedCourse) && TheRepository.SaveAll())
+                {
+                    return Request.CreateResponse(HttpStatusCode.OK, TheModelFactory.Create(updatedCourse));
+                }
+                else
+                    return Request.CreateResponse(HttpStatusCode.NotModified);
+            }
+            catch(Exception ex)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, ex);
+            }
+        }
+
+        public HttpResponseMessage Delete(int id)
+        {
+            try
+            {
+                var course = TheRepository.GetCourse(id);
+                if (course == null)
+                    return Request.CreateResponse(HttpStatusCode.NotFound);
+
+                if (course.Enrollments.Count > 0)
+                {
+                    return Request.CreateResponse(HttpStatusCode.BadRequest, "can not delete course, students has enrollments in course.");
+                }
+
+                if (TheRepository.DeleteCourse(id) && TheRepository.SaveAll())
+                    return Request.CreateResponse(HttpStatusCode.OK);
+                else
+                    return Request.CreateResponse(HttpStatusCode.BadRequest);
+
+            }
+            catch(Exception ex)
+            {
+                return Request.CreateResponse(HttpStatusCode.BadRequest, ex);
+            }
         }
     }
 }

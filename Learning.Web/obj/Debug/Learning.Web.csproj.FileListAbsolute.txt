@@ -90,3 +90,9 @@ D:\My projects\eLearning\Learning.Web\obj\Debug\Learning.Web.dll
 D:\My projects\eLearning\Learning.Web\obj\Debug\Learning.Web.pdb
 D:\My projects\eLearning\Learning.Web\bin\Learning.Data.dll
 D:\My projects\eLearning\Learning.Web\bin\Learning.Data.pdb
+D:\My projects\eLearning\Learning.Web\bin\Ninject.dll
+D:\My projects\eLearning\Learning.Web\bin\Ninject.Web.Common.dll
+D:\My projects\eLearning\Learning.Web\bin\WebActivator.dll
+D:\My projects\eLearning\Learning.Web\bin\WebApiContrib.IoC.Ninject.dll
+D:\My projects\eLearning\Learning.Web\bin\Ninject.xml
+D:\My projects\eLearning\Learning.Web\bin\Ninject.Web.Common.xml
